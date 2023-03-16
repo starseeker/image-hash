@@ -35,7 +35,8 @@
 #include <io.h>
 #endif
 
-void print_usage() {
+void print_usage()
+{
     std::cout << "imghash [OPTIONS] [FILE [FILE ...]]\n";
     std::cout << "  Computes perceptual image hashes of FILEs.\n\n";
     std::cout << "  Outputs hexadecimal hash and filename for each file on a new line.\n";
@@ -60,18 +61,19 @@ void print_version()
     std::cout << "imghash v0.0.1";
 }
 
-std::string format_hash(const std::vector<uint8_t>& hash) {
+std::string format_hash(const std::vector<uint8_t>& hash)
+{
     std::ostringstream oss;
     oss << std::hex << std::setfill('0');
     for (auto b : hash) oss << std::setw(2) << int(b);
     return oss.str();
 }
 
-void print_hash(std::ostream& out, const std::vector<uint8_t>& hash, const std::string& fname, bool binary, bool quiet) {
+void print_hash(std::ostream& out, const std::vector<uint8_t>& hash, const std::string& fname, bool binary, bool quiet)
+{
     if (binary) {
 	for (auto b : hash) out.put(static_cast<char>(b));
-    }
-    else {
+    } else {
 	out << format_hash(hash);
 	if (!quiet) out << " " << fname;
 	out << "\n";
@@ -79,42 +81,49 @@ void print_hash(std::ostream& out, const std::vector<uint8_t>& hash, const std::
 }
 
 template<class... Types>
-class join_t {
+class join_t
+{
     using tuple_type = std::tuple<Types...>;
 
     const std::string delim;
     const tuple_type& tup;
 
     template<size_t I>
-	std::enable_if_t< I >= std::tuple_size_v<tuple_type>> print(std::ostream& out) const {}
+    std::enable_if_t< I >= std::tuple_size_v<tuple_type>> print(std::ostream& out) const {}
 
     template<size_t I>
-	std::enable_if_t< I < std::tuple_size_v<tuple_type>> print(std::ostream& out) const {
-	    if (I > 0) out << delim;
-	    out << std::get<I>(tup);
-	    print<I + 1>(out);
-	}
+    std::enable_if_t< I < std::tuple_size_v<tuple_type>> print(std::ostream& out) const
+    {
+	if (I > 0) out << delim;
+	out << std::get<I>(tup);
+	print<I + 1>(out);
+    }
 
-    public:
+public:
     join_t(const std::string& delim, const std::tuple<Types...>& tup) : delim(delim), tup(tup) {}
 
-    void print(std::ostream& out) const {
+    void print(std::ostream& out) const
+    {
 	print<0>(out);
     }
 };
 
 template<class... Types>
-join_t<Types...> join(const std::string& delim, const std::tuple<Types...>& tup) { return join_t(delim, tup); }
+join_t<Types...> join(const std::string& delim, const std::tuple<Types...>& tup)
+{
+    return join_t(delim, tup);
+}
 
 template<class... Types>
-std::ostream& operator << (std::ostream& out, const join_t<Types...>& j) {
+std::ostream& operator << (std::ostream& out, const join_t<Types...>& j)
+{
     j.print(out);
     return out;
 }
 
 #ifdef USE_SQLITE
-void print_query(std::ostream& out, const std::vector<imghash::Database::query_result>& results, 
-	const std::string& prefix = "  ", const std::string& delim = ": ", const std::string& suffix = "\n")
+void print_query(std::ostream& out, const std::vector<imghash::Database::query_result>& results,
+		 const std::string& prefix = "  ", const std::string& delim = ": ", const std::string& suffix = "\n")
 {
     for (const auto& res : results) {
 	out << prefix << join(delim, res) << suffix;
@@ -122,13 +131,13 @@ void print_query(std::ostream& out, const std::vector<imghash::Database::query_r
 }
 #endif
 
-int parse_dct_size(const std::string& s) {
+int parse_dct_size(const std::string& s)
+{
     static const char err_str[] = "Invalid dct size while parsing arguments. Must be 1, 2, 3, or 4.";
     int x;
     try {
 	x = std::stoi(s);
-    }
-    catch (...) {
+    } catch (...) {
 	throw std::runtime_error(err_str);
     }
     if (x < 1 || x > 4) {
@@ -164,108 +173,86 @@ int main(int argc, const char* argv[])
 		if (arg == "-h" || arg == "--help") {
 		    print_usage();
 		    return 0;
-		}
-		else if (arg == "-v" || arg == "--version") {
+		} else if (arg == "-v" || arg == "--version") {
 		    print_version();
 		    return 0;
-		}
-		else if (arg.substr(0, 2) == "-d") {
+		} else if (arg.substr(0, 2) == "-d") {
 		    use_dct = even = true;
 		    if (arg.size() > 2) {
 			dct_size = parse_dct_size(arg.substr(2));
 		    }
-		}
-		else if (arg == "--dct") {
+		} else if (arg == "--dct") {
 		    use_dct = even = true;
 		    if (++i < argc) {
 			dct_size = parse_dct_size(argv[i]);
-		    }
-		    else {
+		    } else {
 			throw std::runtime_error("Missing dct size. Must be 1,2,3 or 4.");
 		    }
-		}
-		else if (arg == "-q" || arg == "--quiet") quiet = true;
+		} else if (arg == "-q" || arg == "--quiet") quiet = true;
 		else if (arg == "-n" || arg == "--name") {
 		    if (++i < argc) {
 			name = std::string(argv[i]);
-		    }
-		    else {
+		    } else {
 			throw std::runtime_error("Missing output name.");
 		    }
-		}
-		else if (arg == "-x") binary = true;
+		} else if (arg == "-x") binary = true;
 		else if (arg == "--debug") debug = true;
 		else if (arg == "--db") {
 		    if (++i < argc) {
 			db_path = std::string(argv[i]);
-		    }
-		    else {
+		    } else {
 			throw std::runtime_error("Missing database file name.");
 		    }
-		}
-		else if (arg == "--add") {
+		} else if (arg == "--add") {
 		    add = true;
-		}
-		else if (arg == "--query") {
-		    if(i + 2 < argc) {
+		} else if (arg == "--query") {
+		    if (i + 2 < argc) {
 			try {
 			    query_dist = static_cast<unsigned int>(std::stoul(argv[++i]));
 			    query_limit = static_cast<size_t>(std::stoull(argv[++i]));
-			}
-			catch (...) {
+			} catch (...) {
 			    throw std::runtime_error("Invalid query size.");
 			}
-		    }
-		    else {
+		    } else {
 			throw std::runtime_error("Missing query distance and/or limit.");
 		    }
-		}
-		else if (arg == "--remove") {
+		} else if (arg == "--remove") {
 		    remove = true;
 		    exists = rename = false;
 		    if (++i < argc) {
 			name = std::string(argv[i]);
-		    }
-		    else {
+		    } else {
 			throw std::runtime_error("Missing remove name.");
 		    }
-		}
-		else if (arg == "--rename") {
+		} else if (arg == "--rename") {
 		    rename = true;
 		    exists = remove = false;
 		    if (i + 2 < argc) {
 			name = std::string(argv[++i]);
 			new_name= std::string(argv[++i]);
-		    }
-		    else {
+		    } else {
 			throw std::runtime_error("Missing rename parameters.");
 		    }
-		}
-		else if (arg == "--exists") {
+		} else if (arg == "--exists") {
 		    exists = true;
 		    remove = rename = false;
 		    if (++i < argc) {
 			name = std::string(argv[i]);
-		    }
-		    else {
+		    } else {
 			throw std::runtime_error("Missing exists name.");
 		    }
-		}
-		else {
+		} else {
 		    throw std::runtime_error("Unknown option: " + arg);
 		}
-	    }
-	    else {
+	    } else {
 		files.emplace_back(std::move(arg));
 	    }
 	}
-    }
-    catch (std::exception& e) {
+    } catch (std::exception& e) {
 	print_usage();
 	std::cerr << "Error while parsing arguments: " << e.what() << std::endl;
 	return -1;
-    }
-    catch (...) {
+    } catch (...) {
 	print_usage();
 	std::cerr << "Unknown error while parsing arguments." << std::endl;
 	return -1;
@@ -300,8 +287,7 @@ int main(int argc, const char* argv[])
 		print_hash(std::cout, hash, name, binary, quiet);
 		img = load_ppm(stdin, prep, false); //it's OK to get an empty file here
 	    }
-	}
-	else {
+	} else {
 	    //read from list of files
 	    for (const auto& file : files) {
 		imghash::Image<float> img = load(file, prep);
@@ -310,12 +296,10 @@ int main(int argc, const char* argv[])
 		print_hash(std::cout, hash, file, binary, quiet);
 	    }
 	}
-    }
-    catch (std::exception& e) {
+    } catch (std::exception& e) {
 	std::cerr << "Error: " << e.what() << std::endl;
 	return -1;
-    }
-    catch (...) {
+    } catch (...) {
 	std::cerr << "Unknown error." << std::endl;
 	return -1;
     }

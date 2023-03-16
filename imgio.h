@@ -29,19 +29,20 @@
 #include <memory>
 #include <cstdio>
 
-namespace imghash {
+namespace imghash
+{
 
-    template<class T> struct Image;
-    class Preprocess;
+template<class T> struct Image;
+class Preprocess;
 
-    bool test_png(FILE* file);
-    Image<float> load_png(FILE* file, Preprocess& prep);
+bool test_png(FILE* file);
+Image<float> load_png(FILE* file, Preprocess& prep);
 
-    bool test_ppm(FILE* file);
-    Image<float> load_ppm(FILE* file, Preprocess& prep, bool empty_error = true);
+bool test_ppm(FILE* file);
+Image<float> load_ppm(FILE* file, Preprocess& prep, bool empty_error = true);
 
 
-    Image<float> load(const std::string& fname, Preprocess& prep);
+Image<float> load(const std::string& fname, Preprocess& prep);
 
 }
 
