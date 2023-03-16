@@ -35,17 +35,6 @@ namespace imghash {
 
     class Preprocess;
 
-    Image<float> load(const std::string& fname, Preprocess& prep);
-
-    void save(const std::string& fname, const Image<float>& img, float vmax = 1.0f);
-
-#ifdef USE_PNG
-    bool test_png(FILE* file);
-    Image<float> load_png(FILE* file, Preprocess& prep);
-#endif
-    bool test_ppm(FILE* file);
-    Image<float> load_ppm(FILE* file, Preprocess& prep, bool empty_error = true);
-
     template<class T> T convert_pix(uint8_t p);
     template<class T> T convert_pix(uint16_t p);
     template<class T> T convert_pix(float p);

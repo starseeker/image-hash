@@ -1,35 +1,25 @@
-# Prerequisites
-*.d
+# Common build directories used in the source tree
+/build
+/.build
+/*_build
+/*-build
+/out
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Temporary files
+*~
+\#*\#
+.\#*
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-v][a-z]
+[._]sw[a-p]
 
-# Precompiled Headers
-*.gch
-*.pch
+# OS specific files
+.DS_Store
+.DS_Store?
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
-.vs/
-CMakeSettings.json
-out/
+.vscode
+.clang-format
+CMakeLists.txt.user
+/.vs
+/CMakeSettings.json

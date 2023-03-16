@@ -21,6 +21,7 @@
 // SOFTWARE.
 
 #include "imghash.h"
+#include "imgio.h"
 
 #include <iostream>
 #include <iomanip>
