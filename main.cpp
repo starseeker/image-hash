@@ -1,4 +1,3 @@
-
 #include "imghash.h"
 
 #include <iostream>
@@ -13,10 +12,6 @@
 #include <io.h>
 #endif
 
-#ifdef USE_SQLITE
-#include "db.h"
-#endif
-
 void print_usage() {
 	std::cout << "imghash [OPTIONS] [FILE [FILE ...]]\n";
 	std::cout << "  Computes perceptual image hashes of FILEs.\n\n";
@@ -29,18 +24,8 @@ void print_usage() {
 	std::cout << "    -dN, --dct N: use dct hash. N may be one of 1,2,3,4 for 64,256,576,1024 bits respectively.\n";
 	std::cout << "    -q, --quiet : don't output filename.\n";
 	std::cout << "    -n NAME, --name NAME: specify a name for output when reading from stdin\n";
-#ifdef USE_SQLITE
-	std::cout << "    --db DB_PATH : use the specified database for --add or --query.\n";
-	std::cout << "    --add : add the image to the database. If the image comes from stdin, --name must be specified.\n";
-	std::cout << "    --query DIST LIMIT : query the database for up to LIMIT similar images within DIST distance.\n";
-	std::cout << "    --remove NAME : remove the name from the database. No input is processed if this is specified.\n";
-	std::cout << "    --rename OLDNAME NEWNAME : change the name of an image in the database. No input is processed if this is specified.\n";
-	std::cout << "    --exists NAME : check if the image has been inserted into the database.\n";
-#endif
+
 	std::cout << "  Supported image formats: \n";
-#ifdef USE_JPEG
-	std::cout << "    jpeg\n";
-#endif
 #ifdef USE_PNG
 	std::cout << "    png\n";
 #endif
@@ -251,16 +236,6 @@ int main(int argc, const char* argv[])
 				files.emplace_back(std::move(arg));
 			}
 		}
-
-#ifdef USE_SQLITE
-		if (db_path.empty() && (add || query_limit > 0)) {
-			throw std::runtime_error("--add and --query require --db to be specified.");
-		}
-#else
-		if (!db_path.empty() || add || query_limit > 0) {
-			throw std::runtime_error("Support for --db, --add, --query was not compiled. Rebuild with USE_SQLITE defined.");
-		}
-#endif
 	}
 	catch (std::exception& e) {
 		print_usage();
@@ -275,26 +250,6 @@ int main(int argc, const char* argv[])
 	//done parsing arguments, now do the processing
 
 	try {
-
-#ifdef USE_SQLITE
-		std::unique_ptr<imghash::Database> db;
-		if (!db_path.empty()) db = std::make_unique<imghash::Database>(db_path);
-
-		if (rename || remove || exists) {
-			if (rename) {
-				db->rename(name, new_name);
-			}
-			else if(remove){
-				db->remove(name);
-			}
-			else if (exists) {
-				if (db->exists(name)) return 0;
-				else return 100;
-			}
-			return 0;
-		}
-#endif
-
 		imghash::Preprocess prep(128, 128);
 
 		std::unique_ptr<imghash::Hasher> hasher;
@@ -313,17 +268,13 @@ int main(int argc, const char* argv[])
 				throw std::runtime_error("Failed to open stdin in binary mode");
 			}
 #endif
-			
+
 			imghash::Image<float> img;
-			
+
 			img = load_ppm(stdin, prep);
 			while (img.size > 0) {
 				auto hash = hasher->apply(img);
 				print_hash(std::cout, hash, name, binary, quiet);
-				if (db) {
-					if (add) db->insert(hash, name);
-					if (query_limit > 0) print_query(std::cout, db->query(hash, query_dist, query_limit));
-				}
 				img = load_ppm(stdin, prep, false); //it's OK to get an empty file here
 			}
 		}
@@ -334,10 +285,6 @@ int main(int argc, const char* argv[])
 				
 				auto hash = hasher->apply(img);
 				print_hash(std::cout, hash, file, binary, quiet);
-				if (db) {
-					if (add) db->insert(hash, file);
-					if (query_limit > 0) print_query(std::cout, db->query(hash, query_dist, query_limit));
-				}
 			}
 		}
 	}

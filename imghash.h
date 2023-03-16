@@ -20,10 +20,6 @@ namespace imghash {
 
 	void save(const std::string& fname, const Image<float>& img, float vmax = 1.0f);
 
-#ifdef USE_JPEG
-	bool test_jpeg(FILE* file);
-	Image<float> load_jpeg(FILE* file, Preprocess& prep);
-#endif
 #ifdef USE_PNG
 	bool test_png(FILE* file);
 	Image<float> load_png(FILE* file, Preprocess& prep);
