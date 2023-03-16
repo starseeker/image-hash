@@ -20,7 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "imghash.h"
+#include "PImgHash.h"
 #include "imgio.h"
 
 #include "png.h"

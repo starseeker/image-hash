@@ -1,4 +1,3 @@
-# image-hash
 ## Perceptual Image Hashing
 
 This code calculates perceptual hashes of images, which are short (relative to the size of the image) sequences of numbers that are similar for similar-looking images. These hashes may be used for finding duplicate or very similar images in a large dataset.
