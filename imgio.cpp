@@ -291,7 +291,7 @@ Image<float> load_png(FILE* file, Preprocess& prep)
 	Image<uint8_t> img(height, width, channels, rowbytes*height, rowbytes);
 	std::vector<uint8_t*> rows;
 	rows.reserve(height);
-	for (size_t y = 0; y < height; ++y) rows.push_back(img.data.get() + img.index(y,0,0));
+	for (size_t y = 0; y < height; ++y) rows.push_back(img.data->data() + img.index(y,0,0));
 	png_read_image(png_ptr, rows.data());
 
 	return prep.apply(img);

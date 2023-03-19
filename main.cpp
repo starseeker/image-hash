@@ -281,9 +281,8 @@ int main(int argc, const char* argv[])
 	    }
 #endif
 
-	    imghash::Image<float> img;
+	    imghash::Image<float> img = load_ppm(stdin, prep);
 
-	    img = load_ppm(stdin, prep);
 	    while (img.size > 0) {
 		auto hash = hasher->apply(img);
 		print_hash(std::cout, hash, name, binary, quiet);

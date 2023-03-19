@@ -170,6 +170,10 @@ struct Image {
     size_t height, width, channels;
     size_t size, row_size;
 
+    // Used by imageio code
+    Image() : data(nullptr), height(0), width(0), channels(0), size(0), row_size(0)
+    {};
+
     Image(size_t i_height, size_t i_width, size_t i_channels, size_t i_size, size_t i_row_size)
 	: data(nullptr), height(i_height), width(i_width), channels(i_channels), size(i_size), row_size(i_row_size)
     {
