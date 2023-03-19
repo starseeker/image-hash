@@ -19,6 +19,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+//
+// https://github.com/s-bear/image-hash
 
 #include "PImgHash.h"
 
@@ -374,7 +376,7 @@ Image<float> Preprocess::stop()
     size_t in_count = in_c * in_w * in_h;
     for (size_t c = 0, j = 0; c < in_c; ++c) {
 	size_t sum = 0;
-	for (size_t i = 0; i < hist_bins; ++i, ++j) {
+	for (size_t ip = 0; ip < hist_bins; ++ip, ++j) {
 	    sum += hist[j];
 	    lut.push_back(float(sum) / in_count);
 	}
@@ -400,7 +402,7 @@ Image<float> Preprocess::stop()
 Image<float> Preprocess::apply(const Image<uint8_t>& input)
 {
     start(input.height, input.width, input.channels);
-    for (const uint8_t* row = input.data.get(); add_row(row); row += input.row_size);
+    for (const uint8_t* row = (const uint8_t*)input.data->data(); add_row(row); row += input.row_size);
     return stop();
 }
 

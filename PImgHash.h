@@ -19,11 +19,14 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
+//
+// https://github.com/s-bear/image-hash
 
 #pragma once
 
 #include <iostream>
 #include <vector>
+#include <cassert>
 #include <cmath>
 #include <cstdint>
 #include <memory>
@@ -56,7 +59,7 @@ void resize_row(size_t in_c, size_t in_w, const InT* in, size_t out_w, OutT* out
 	}
     } else if (in_w < out_w) {
 	std::vector<OutT> pix(in_c, 0);
-	for (size_t in_x = 0, out_x = 0; in_x < in_w; ++in_x) {
+	for (size_t in_x = 0; in_x < in_w; ++in_x) {
 	    for (size_t c = 0; c < in_c; ++c, ++in) {
 		auto p = *in;
 		hist[c * 256 + convert_pix<uint8_t>(p)] += 1;
@@ -73,7 +76,7 @@ void resize_row(size_t in_c, size_t in_w, const InT* in, size_t out_w, OutT* out
     } else {
 	//out_w < in_w
 	std::vector<TmpT> pix(in_c, TmpT(0));
-	for (size_t out_x = 0, in_x = 0; out_x < out_w; ++out_x) {
+	for (size_t out_x = 0; out_x < out_w; ++out_x) {
 	    for (size_t c = 0; c < in_c; ++c) {
 		pix[c] = 0;
 	    }
@@ -124,7 +127,7 @@ void resize(const Image<InT>& in, Image<OutT>& out, std::vector<size_t>& hist)
 	}
     } else if (in.height < out.height) {
 	std::vector<OutT> tmp(out.channels*out.width, 0);
-	for (size_t in_y = 0, out_y = 0; in_y < in.height; ++in_y, in_row += in.row_size) {
+	for (size_t in_y = 0; in_y < in.height; ++in_y, in_row += in.row_size) {
 	    resize_row<InT, OutT, TmpT>(in.channels, in.width, in_row, out.width, tmp.data(), tile_w, false, hist);
 	    size_t th = tile_h[in_y];
 	    //copy the input row to each row of the output in the tile
@@ -139,7 +142,7 @@ void resize(const Image<InT>& in, Image<OutT>& out, std::vector<size_t>& hist)
     } else {
 	//out.height < in.height
 	std::vector<TmpT> tmp(out.channels * out.width, 0);
-	for (size_t out_y = 0, in_y = 0; out_y < out.height; ++out_y, out_row += out.row_size) {
+	for (size_t out_y = 0; out_y < out.height; ++out_y, out_row += out.row_size) {
 	    std::fill(tmp.begin(), tmp.end(), TmpT(0));
 	    size_t th = tile_h[out_y];
 	    for (size_t ty = 0; ty < th; ++ty, in_row += in.row_size) {
@@ -163,20 +166,17 @@ void resize(const Image<InT>& in, Image<OutT>& out)
 
 template<class T>
 struct Image {
-    std::shared_ptr<T[]> data;
+    std::vector<T> *data = NULL;
     size_t height, width, channels;
     size_t size, row_size;
 
-    Image() : data(nullptr), height(0), width(0), channels(0), size(0), row_size(0)
-    {}
-
-    Image(size_t height, size_t width, size_t channels, size_t size, size_t row_size)
-	: data(nullptr), height(height), width(width), channels(channels), size(size), row_size(row_size)
+    Image(size_t i_height, size_t i_width, size_t i_channels, size_t i_size, size_t i_row_size)
+	: data(nullptr), height(i_height), width(i_width), channels(i_channels), size(i_size), row_size(i_row_size)
     {
 	allocate();
     }
-    Image(size_t height, size_t width, size_t channels = 1)
-	: Image(height, width, channels, height* width* channels, width* channels)
+    Image(size_t i_height, size_t i_width, size_t i_channels = 1)
+	: Image(i_height, i_width, i_channels, i_height* i_width* i_channels, i_width* i_channels)
     {}
     Image(const Image& other) = default;
     Image(Image&& other) = default;
@@ -185,7 +185,10 @@ struct Image {
 
     void allocate()
     {
-	data.reset(new T[size]);
+	if (data)
+	    delete data;
+	data = new std::vector<T>;
+	data->resize(size, 0);
     }
 
     size_t index(size_t y, size_t x, size_t c) const
@@ -195,11 +198,11 @@ struct Image {
 
     T* begin()
     {
-	return data.get();
+	return (T*)data->data();
     }
     const T* begin() const
     {
-	return data.get();
+	return (const T*)data->data();
     }
 
     T* end()
@@ -222,11 +225,11 @@ struct Image {
 
     T operator[](size_t i) const
     {
-	return data[i];
+	return (*data)[i];
     }
     T& operator[](size_t i)
     {
-	return data[i];
+	return (*data)[i];
     }
 
     T operator()(size_t y, size_t x, size_t c) const
@@ -246,7 +249,13 @@ class Preprocess
 
     Image<float> img;
     std::vector<size_t> hist, tile_w, tile_h;
-    size_t in_h, in_w, in_c, y, i, ty;
+    size_t y;
+    size_t i;
+    size_t ty;
+    size_t in_w;
+    size_t in_h;
+    size_t in_c;
+
 public:
 
     Preprocess();
@@ -274,6 +283,7 @@ public:
 	    }
 	    resize_row<RowT, float, float>(in_c, in_w, input_row, img.width, img_row, tile_w, true, hist);
 	    ++ty;
+	    assert(y < tile_h.size());
 	    size_t th = tile_h[y];
 	    if (ty >= th) {
 		ty = 0;
@@ -288,6 +298,7 @@ public:
 	} else {
 	    std::vector<float> tmp(img.width * img.channels, 0);
 	    resize_row<RowT, float, float>(in_c, in_w, input_row, img.width, tmp.data(), tile_w, false, hist);
+	    assert(y < tile_h.size());
 	    size_t th = tile_h[y];
 	    for (ty = 0; ty < th; ++ty, ++y, i += img.row_size) {
 		for (size_t x = 0, j = 0; x < img.width; ++x) {
@@ -383,8 +394,8 @@ protected:
       */
     static std::vector<float> mat(unsigned N, unsigned M, bool even);
 
-    bool even_;
     unsigned N_, M_;
+    bool even_;
     //! 1D DCT matrix coefficients
     std::vector<float> m_;
 
